@@ -163,3 +163,5 @@ Execute:
 ```bash
 ./installer.sh
 ```
+
+---
