@@ -25,6 +25,12 @@ Diretório padrão para scripts administrativos \
 Disponível para todos os usuários \
 Não é sobrescrito por atualizações do sistema
 
+### Tornar executável
+
+```bash
+sudo chmod +x /usr/local/bin/auto_update.sh
+```
+
 ### Código do script
 
 ```bash
@@ -221,3 +227,31 @@ Distro	Limitação \
 Arch	Não separa segurança \
 Debian	Depende do unattended-upgrades \
 Todas	Não reinicia automaticamente
+
+### Testar o script manualmente (passo obrigatório)
+
+Antes de confiar no cron, execute manualmente:
+
+```bash
+sudo /usr/local/bin/auto_update.sh
+```
+
+Depois verifique o log:
+
+```bash
+sudo tail -n 20 /var/log/auto_update.log
+```
+
+Você deve ver algo como:
+
+```text
+[2026-01-18 14:32:01] Verificando atualizações de segurança...
+[2026-01-18 14:32:02] Sistema Debian/Ubuntu (APT)
+[2026-01-18 14:32:05] Nenhuma atualização de segurança disponível.
+[2026-01-18 14:32:05] Processo finalizado.
+```
+
+Se isso funciona, o script está correto. \
+Se não funcionar manualmente, o cron nunca funcionará.
+
+---
