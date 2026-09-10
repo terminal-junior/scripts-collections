@@ -69,19 +69,19 @@ Clone o repositório:
 
 ```bash
 git clone https://github.com/terminal-junior/scripts-collections.git
-cd scripts-collections
+cd scripts-collections/bash/utils/rsync
 ```
 
 Dê permissão de execução ao script:
 
 ```bash
-chmod +x backup.sh
+chmod +x rsync.sh
 ```
 
 Execute:
 
 ```bash
-./backup.sh
+./rsync.sh
 ```
 
 ---
