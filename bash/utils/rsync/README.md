@@ -741,7 +741,7 @@ Algumas melhorias que podem ser implementadas:
 
 # 📜 Licença
 
-Este projeto pode ser utilizado, modificado e distribuído conforme os termos definidos pelo autor.
+Este projeto pode ser utilizado, modificado e distribuído conforme os termos definidos.
 
 <!-- Caso este projeto seja publicado com uma licença específica, substitua esta seção pela licença escolhida, por exemplo: -->
 
