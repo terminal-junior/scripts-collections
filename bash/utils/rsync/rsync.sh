@@ -35,7 +35,7 @@ while IFS= read -r MES_DIR; do
         [ -d "$1" ] || exit 1
 
         # Compacta todos os diretórios do mês.
-        7zz a -mx=9 -mhe=on -t7z -m0=lzma2 "$ARQUIVO" "$MES_DIR"-??
+        7zz a -mx=9 "$ARQUIVO" "$MES_DIR"-??
     ); then
 
         # Remove os diretórios somente após compactação bem-sucedida.
