@@ -68,8 +68,8 @@ command -v 7zz
 Clone o repositório:
 
 ```bash
-git clone https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
-cd SEU_REPOSITORIO
+git clone https://github.com/terminal-junior/scripts-collections.git
+cd scripts-collections
 ```
 
 Dê permissão de execução ao script:
