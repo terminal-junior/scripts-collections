@@ -743,7 +743,7 @@ Algumas melhorias que podem ser implementadas:
 
 Este projeto pode ser utilizado, modificado e distribuído conforme os termos definidos pelo autor.
 
-Caso este projeto seja publicado com uma licença específica, substitua esta seção pela licença escolhida, por exemplo:
+<!-- Caso este projeto seja publicado com uma licença específica, substitua esta seção pela licença escolhida, por exemplo: -->
 
 ```text
 MIT License
