@@ -5,8 +5,8 @@
 [![ShellCheck](https://img.shields.io/badge/ShellCheck-Passed-success?logo=gnu-bash\&logoColor=white)](#)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Stable-success)](#)
-[![GitHub Stars](https://img.shields.io/github/stars/SEU-USUARIO/fastfetch-neofetch-installer?style=flat\&logo=github)](https://github.com/SEU-USUARIO/fastfetch-neofetch-installer/stargazers)
-[![GitHub Issues](https://img.shields.io/github/issues/SEU-USUARIO/fastfetch-neofetch-installer?style=flat\&logo=github)](https://github.com/SEU-USUARIO/fastfetch-neofetch-installer/issues)
+<!-- [![GitHub Stars](https://img.shields.io/github/stars/SEU-USUARIO/fastfetch-neofetch-installer?style=flat\&logo=github)](https://github.com/SEU-USUARIO/fastfetch-neofetch-installer/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/SEU-USUARIO/fastfetch-neofetch-installer?style=flat\&logo=github)](https://github.com/SEU-USUARIO/fastfetch-neofetch-installer/issues) -->
 
 > **Automação simples para instalar e executar Fastfetch ou Neofetch em diferentes distribuições Linux.**
 
@@ -60,7 +60,7 @@ O script detecta o gerenciador de pacotes disponível no sistema.
 └────────────┬────────────┘
              │
        ┌─────┴─────┐
-       │ Encontrado?│
+       │Encontrado?│
        └─────┬─────┘
              │
        ┌─────┴───────────────┐
@@ -122,14 +122,12 @@ O script detecta o gerenciador de pacotes disponível no sistema.
 # 📁 Estrutura do projeto
 
 ```text
-fastfetch-neofetch-installer/
-├── installer.sh
-├── README.md
-├── LICENSE
-├── .gitignore
-└── .github/
-    └── workflows/
-        └── shellcheck.yml
+scripts-collections/
+└── bash/
+    └── utils/
+        └── fetch/
+            ├── README.md
+            └── installer.sh
 ```
 
 | Arquivo              | Descrição                   |
@@ -137,8 +135,8 @@ fastfetch-neofetch-installer/
 | `installer.sh`       | Script principal            |
 | `README.md`          | Documentação do projeto     |
 | `LICENSE`            | Licença open-source         |
-| `.gitignore`         | Arquivos ignorados pelo Git |
-| `.github/workflows/` | Automação de CI/CD          |
+<!-- | `.gitignore`         | Arquivos ignorados pelo Git |
+| `.github/workflows/` | Automação de CI/CD          | -->
 
 ---
 
@@ -613,7 +611,6 @@ command -v neofetch
 
 # 🗺️ Roadmap
 
-* [ ] Adicionar `--help`
 * [ ] Adicionar `--version`
 * [ ] Adicionar modo `--dry-run`
 * [ ] Adicionar escolha manual entre Fastfetch e Neofetch
@@ -621,8 +618,6 @@ command -v neofetch
 * [ ] Adicionar logs opcionais
 * [ ] Detectar distribuição através de `/etc/os-release`
 * [ ] Adicionar testes automatizados
-* [ ] Adicionar GitHub Actions
-* [ ] Integrar ShellCheck ao CI
 * [ ] Adicionar suporte a novos gerenciadores de pacotes
 
 ---
