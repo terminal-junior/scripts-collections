@@ -1,105 +1,254 @@
-# 🔄 Backup Contínuo com Rsync e Compactação Mensal
+# 🔄 Backup Contínuo com Rsync
 
-Script **Shell POSIX** para realizar sincronização contínua de diretórios pessoais para um dispositivo de armazenamento externo, como pendrive, HD externo ou SSD.
+[![Shell](https://img.shields.io/badge/Shell-POSIX--sh-4EAA25?logo=gnu-bash\&logoColor=white)](https://www.gnu.org/software/bash/)
+[![Rsync](https://img.shields.io/badge/rsync-backup-blue)](https://rsync.samba.org/)
+[![7--Zip](https://img.shields.io/badge/7--Zip-compression-orange)](https://www.7-zip.org/)
+[![Linux](https://img.shields.io/badge/platform-Linux-lightgrey?logo=linux\&logoColor=white)](https://www.kernel.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](#-licença)
 
-O script utiliza o **Rsync** para manter os arquivos sincronizados e cria automaticamente logs de cada execução. No início de cada ciclo, também verifica os logs de meses anteriores e compacta cada mês em um único arquivo `.7z` utilizando compressão máxima.
+Script de **backup contínuo e sincronização automática** para Linux utilizando `rsync`, com geração de logs detalhados e compactação mensal automática dos logs antigos utilizando `7zz`.
 
-## ✨ Funcionalidades
-
-* 🔄 Sincronização automática e contínua com `rsync`
-* 💾 Backup para um dispositivo externo ou diretório definido pelo usuário
-* 🗑️ Uso de `--delete` para manter o destino espelhado com a origem
-* 📁 Sincronização de:
-
-  * `Downloads`
-  * `Pictures`
-  * `Videos`
-  * `Music`
-  * `Documents`
-* 🚫 Exclusão do diretório `Documents/storage/` da sincronização
-* 📝 Criação de um arquivo de log para cada execução
-* 📅 Organização dos logs por dia
-* 🗜️ Compactação automática dos logs de meses anteriores
-* 🔐 Compressão `.7z` utilizando `7zz -mx=9`
-* ♻️ Remoção dos logs originais somente após uma compactação bem-sucedida
-* ⏱️ Execução automática a cada **5 minutos**
-* 📊 Registro do uptime do sistema em cada execução
-* 🖥️ Exibição simultânea do progresso no terminal e no arquivo de log
+O objetivo é manter diretórios pessoais sincronizados com um dispositivo de armazenamento externo, como **pendrive, HD externo ou SSD**, enquanto mantém um histórico organizado das execuções.
 
 ---
 
-## 📋 Requisitos
+## 📑 Sumário
 
-O script depende dos seguintes programas:
+* [✨ Características](#-características)
+* [🏗️ Arquitetura](#️-arquitetura)
+* [🔄 Fluxo de execução](#-fluxo-de-execução)
+* [📋 Requisitos](#-requisitos)
+* [📥 Instalação](#-instalação)
+* [⚙️ Configuração](#️-configuração)
+* [📂 Diretórios sincronizados](#-diretórios-sincronizados)
+* [📝 Sistema de logs](#-sistema-de-logs)
+* [🗜️ Compactação mensal](#️-compactação-mensal)
+* [🔐 Estratégia de segurança](#-estratégia-de-segurança)
+* [⏱️ Intervalo de execução](#️-intervalo-de-execução)
+* [🖥️ Executando manualmente](#️-executando-manualmente)
+* [⚙️ Executando como serviço systemd](#️-executando-como-serviço-systemd)
+* [🧪 Testes](#-testes)
+* [📊 Exemplos de saída](#-exemplos-de-saída)
+* [⚠️ Considerações importantes](#️-considerações-importantes)
+* [🛠️ Troubleshooting](#️-troubleshooting)
+* [💡 Melhorias futuras](#-melhorias-futuras)
+* [📄 Licença](#-licença)
 
-* `sh`
-* `rsync`
-* `7zz`
-* `find`
-* `cut`
-* `sort`
-* `awk`
-* `date`
-* `mkdir`
-* `rm`
-* `sleep`
-* `clear`
+---
 
-Em distribuições Linux baseadas em Debian/Ubuntu, por exemplo:
+# ✨ Características
+
+* 🔄 Sincronização automática a cada **5 minutos**
+* 💾 Suporte a dispositivos externos de armazenamento
+* 📁 Sincronização de diretórios pessoais
+* 🗑️ Espelhamento utilizando `rsync --delete`
+* 📝 Um arquivo de log para cada execução
+* 📅 Organização dos logs por data
+* 🗜️ Compactação automática dos meses anteriores
+* 🔐 Compressão máxima com `7zz -mx=9`
+* ♻️ Logs originais removidos somente após compactação bem-sucedida
+* 🚫 Exclusão configurável de diretórios específicos
+* 📊 Registro do uptime do sistema
+* 🖥️ Saída simultaneamente registrada no terminal e nos arquivos de log
+* 🔁 Execução contínua através de loop infinito
+* ⚙️ Pode ser executado como serviço `systemd`
+
+---
+
+# 🏗️ Arquitetura
+
+A arquitetura do script é baseada em três componentes principais:
+
+```text
+                         ┌──────────────────────┐
+                         │      SISTEMA         │
+                         │       Linux          │
+                         └──────────┬───────────┘
+                                    │
+                                    ▼
+                         ┌──────────────────────┐
+                         │      backup.sh       │
+                         │                      │
+                         │  Loop principal     │
+                         └──────────┬───────────┘
+                                    │
+                    ┌───────────────┴───────────────┐
+                    │                               │
+                    ▼                               ▼
+          ┌─────────────────┐             ┌──────────────────┐
+          │     Rsync       │             │  Gerenciamento   │
+          │                 │             │     de logs      │
+          └────────┬────────┘             └────────┬─────────┘
+                   │                               │
+                   ▼                               ▼
+          ┌─────────────────┐             ┌──────────────────┐
+          │     DESTINO     │             │ logs/YYYY-MM-DD/ │
+          │                 │             │                  │
+          │ /mnt/pendrive   │             │ HH-MM-SS.log     │
+          └─────────────────┘             └────────┬─────────┘
+                                                    │
+                                                    ▼
+                                           ┌──────────────────┐
+                                           │ Compactação 7z   │
+                                           │                  │
+                                           │ YYYY-MM.7z       │
+                                           └──────────────────┘
+```
+
+### Componentes
+
+| Componente  | Responsabilidade                                      |
+| ----------- | ----------------------------------------------------- |
+| `backup.sh` | Controla todo o processo                              |
+| `rsync`     | Sincroniza os arquivos                                |
+| `7zz`       | Compacta os logs antigos                              |
+| `logs/`     | Armazena o histórico das execuções                    |
+| `DESTINO`   | Local onde os arquivos são sincronizados              |
+| `systemd`   | Opcionalmente mantém o script executando como serviço |
+
+---
+
+# 🔄 Fluxo de execução
+
+A cada ciclo, o script executa as seguintes etapas:
+
+```text
+┌───────────────────────┐
+│      Início           │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Verifica meses antigos│
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Compacta logs antigos │
+│       com 7zz         │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Cria diretório de log │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Rsync Downloads       │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Rsync Pictures        │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Rsync Videos          │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Rsync Music           │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Rsync Documents       │
+└──────────┬────────────┘
+           │
+           ▼
+┌───────────────────────┐
+│ Aguarda 300 segundos  │
+└──────────┬────────────┘
+           │
+           └──────────────► Novo ciclo
+```
+
+---
+
+# 📋 Requisitos
+
+O script foi desenvolvido para ambientes Linux com suporte a Shell POSIX.
+
+### Dependências
+
+| Dependência | Função                             |
+| ----------- | ---------------------------------- |
+| `sh`        | Interpretador do script            |
+| `rsync`     | Sincronização                      |
+| `7zz`       | Compactação                        |
+| `find`      | Localização dos diretórios de logs |
+| `date`      | Data e hora                        |
+| `awk`       | Cálculo do uptime                  |
+| `mkdir`     | Criação de diretórios              |
+| `rm`        | Remoção de arquivos                |
+| `sleep`     | Controle do intervalo              |
+| `clear`     | Limpeza do terminal                |
+
+### Debian / Ubuntu
 
 ```bash
 sudo apt update
 sudo apt install rsync p7zip-full
 ```
 
-> Dependendo da distribuição, o executável do 7-Zip pode ser `7z`, `7zz` ou outro nome. Este script especificamente utiliza o comando `7zz`.
-
-Verifique se os comandos estão disponíveis:
+Verifique:
 
 ```bash
 command -v rsync
 command -v 7zz
 ```
 
----
+Saída esperada, por exemplo:
 
-## 📥 Instalação
-
-Clone o repositório:
-
-```bash
-git clone https://github.com/terminal-junior/scripts-collections.git
-cd scripts-collections/bash/utils/rsync
+```text
+/usr/bin/rsync
+/usr/bin/7zz
 ```
 
-Dê permissão de execução ao script:
+> Dependendo da distribuição Linux, o pacote ou o executável do 7-Zip pode possuir um nome diferente.
+
+---
+
+# 📥 Instalação
+
+Clone o projeto:
 
 ```bash
-chmod +x rsync.sh
+git clone https://github.com/terminal-junior/script-collections.git
+cd script-collections/bash/utils/rsync/
+```
+
+Dê permissão de execução:
+
+```bash
+chmod +x backup.sh
 ```
 
 Execute:
 
 ```bash
-./rsync.sh
+./backup.sh
 ```
 
 ---
 
-## ⚙️ Configuração
+# ⚙️ Configuração
 
-A principal configuração do script está no início do arquivo:
+A principal configuração está no início do script:
 
 ```sh
 DESTINO="/mnt/pendrive"
 ```
 
-Altere esse valor para o ponto de montagem do seu dispositivo de destino.
+Altere para o ponto de montagem desejado.
 
-Por exemplo:
+Exemplo:
 
 ```sh
-DESTINO="/media/usuario/Backup"
+DESTINO="/media/$USER/Backup"
 ```
 
 ou:
@@ -108,133 +257,576 @@ ou:
 DESTINO="/mnt/backup"
 ```
 
-O diretório onde o próprio script está localizado é detectado automaticamente:
+O diretório do projeto é detectado automaticamente:
 
 ```sh
 BASE_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 ```
 
-Os logs são armazenados em:
+Os logs serão armazenados automaticamente em:
 
 ```text
 <diretório-do-script>/logs/
 ```
 
-Portanto, não é necessário configurar manualmente o caminho dos logs.
-
 ---
 
-# 🔄 Como funciona
+# 📂 Diretórios sincronizados
 
-O script funciona em um loop infinito:
+Atualmente, o script sincroniza:
 
 ```text
-┌─────────────────────────┐
-│ Início do ciclo         │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Compacta meses antigos  │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Cria log da execução    │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Rsync Downloads         │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Rsync Pictures          │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Rsync Videos            │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Rsync Music             │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Rsync Documents         │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│ Aguarda 5 minutos       │
-└────────────┬────────────┘
-             │
-             └──────────────► Novo ciclo
+$HOME/Downloads
+$HOME/Pictures
+$HOME/Videos
+$HOME/Music
+$HOME/Documents
 ```
 
----
+A estrutura no destino será semelhante a:
 
-## 📂 Diretórios sincronizados
-
-O script sincroniza os seguintes diretórios do `$HOME`:
-
-### Downloads
-
-```sh
-rsync -ahvi --delete --info=NAME0 "$HOME/Downloads" "$DESTINO"
+```text
+/mnt/pendrive/
+├── Downloads/
+├── Pictures/
+├── Videos/
+├── Music/
+└── Documents/
 ```
 
-### Pictures
-
-```sh
-rsync -ahvi --delete --info=NAME0 "$HOME/Pictures" "$DESTINO"
-```
-
-### Videos
-
-```sh
-rsync -ahvi --delete --info=NAME0 "$HOME/Videos" "$DESTINO"
-```
-
-### Music
-
-```sh
-rsync -ahvi --delete --info=NAME0 "$HOME/Music" "$DESTINO"
-```
-
-### Documents
-
-```sh
-rsync -ahvi --delete --info=NAME0 \
-    --exclude='storage/' \
-    "$HOME/Documents" "$DESTINO"
-```
-
-O diretório:
+O diretório abaixo é excluído da sincronização:
 
 ```text
 Documents/storage/
 ```
 
-é propositalmente ignorado.
+Isso ocorre através de:
+
+```sh
+--exclude='storage/'
+```
 
 ---
 
-# ⚠️ Sobre o `--delete`
+# 📝 Sistema de logs
 
-O script utiliza:
+Cada execução cria um novo arquivo de log.
+
+Exemplo:
+
+```text
+logs/
+├── 2026-09-10/
+│   ├── 15-00-00.log
+│   ├── 15-05-00.log
+│   ├── 15-10-00.log
+│   └── 15-15-00.log
+│
+└── 2026-09-11/
+    ├── 00-00-00.log
+    └── 00-05-00.log
+```
+
+O formato é:
+
+```text
+logs/YYYY-MM-DD/HH-MM-SS.log
+```
+
+Cada execução registra:
+
+* início;
+* data e hora;
+* uptime;
+* caminho do log;
+* etapas do backup;
+* arquivos modificados;
+* erros do `rsync`;
+* conclusão;
+* data e hora final;
+* uptime final.
+
+---
+
+# 🗜️ Compactação mensal
+
+No início de cada ciclo, o script verifica se existem logs de meses anteriores.
+
+Por exemplo:
+
+```text
+logs/
+├── 2026-08-01/
+├── 2026-08-02/
+├── 2026-08-03/
+├── ...
+└── 2026-09-01/
+```
+
+Quando o mês atual é setembro, os logs de agosto podem ser compactados:
+
+```text
+logs/
+└── 2026-08.7z
+```
+
+O comando utilizado é:
+
+```sh
+7zz a -mx=9 "$ARQUIVO" "$MES_DIR"-??
+```
+
+### Compressão máxima
+
+O parâmetro:
+
+```text
+-mx=9
+```
+
+solicita o nível máximo de compressão disponível.
+
+---
+
+# 🔐 Estratégia de segurança
+
+A remoção dos logs originais ocorre **somente após o sucesso da compactação**.
+
+```text
+          Diretórios do mês
+                  │
+                  ▼
+              ┌───────┐
+              │  7zz  │
+              └───┬───┘
+                  │
+           ┌──────┴──────┐
+           │             │
+        SUCESSO         ERRO
+           │             │
+           ▼             ▼
+       Remove          Mantém
+       diretórios     diretórios
+           │
+           ▼
+       arquivo .7z
+```
+
+Em caso de erro:
+
+```sh
+rm -f "$ARQUIVO"
+```
+
+O arquivo `.7z` incompleto é removido e os diretórios originais permanecem intactos.
+
+---
+
+# ⏱️ Intervalo de execução
+
+O intervalo padrão é de:
+
+```text
+300 segundos
+```
+
+ou:
+
+```text
+5 minutos
+```
+
+Definido por:
+
+```sh
+sleep 300
+```
+
+Para alterar para 10 minutos:
+
+```sh
+sleep 600
+```
+
+Para 1 minuto:
+
+```sh
+sleep 60
+```
+
+> O intervalo é iniciado após o término do ciclo anterior. Portanto, o tempo real entre dois inícios será maior que o valor do `sleep`.
+
+---
+
+# 🖥️ Executando manualmente
+
+Após configurar o destino:
+
+```bash
+./backup.sh
+```
+
+Durante a execução, será exibido algo semelhante a:
+
+```text
+============================================================
+Inicio - Data: 11/09/2026 02:00:03 | Uptime: 4d 12h 32m 10s
+Log: /home/user/backup/logs/2026-09-11/02-00-03.log
+============================================================
+
+[1/7] Inicializando Rsync
+
+[2/7] Sincronizando diretório Downloads
+Itens alterados nesta execução:
+
+[3/7] Sincronizando diretório Picture
+Itens alterados nesta execução:
+
+[4/7] Sincronizando diretório Videos
+Itens alterados nesta execução:
+
+[5/7] Sincronizando diretório Music
+Itens alterados nesta execução:
+
+[6/7] Sincronizando diretório Documents
+Itens alterados nesta execução:
+
+[7/7] Sincronização concluída!
+
+Fim - Data: 11/09/2026 02:00:38 | Uptime: 4d 12h 32m 45s
+============================================================
+```
+
+Após aproximadamente 5 minutos, o ciclo será executado novamente.
+
+---
+
+# 📊 Exemplos de saída do Rsync
+
+Quando um arquivo é alterado, o log poderá apresentar informações como:
+
+```text
+>f..t...... Downloads/arquivo.zip
+>f+++++++++ Pictures/foto.jpg
+*deleting   Documents/arquivo-antigo.txt
+```
+
+Essas mensagens indicam arquivos modificados, adicionados ou removidos.
+
+---
+
+# ⚙️ Executando como serviço systemd
+
+Para uso contínuo, recomenda-se executar o script através do `systemd`.
+
+Isso permite:
+
+* iniciar automaticamente com o sistema;
+* reiniciar o script caso ele seja encerrado;
+* consultar o status;
+* visualizar logs;
+* controlar o processo com `systemctl`.
+
+## 1. Instale o script
+
+Por exemplo:
+
+```bash
+sudo mkdir -p /opt/backup-rsync
+sudo cp backup.sh /opt/backup-rsync/
+sudo chmod +x /opt/backup-rsync/backup.sh
+```
+
+---
+
+## 2. Configure o destino
+
+Edite:
+
+```bash
+sudo nano /opt/backup-rsync/backup.sh
+```
+
+Configure:
+
+```sh
+DESTINO="/mnt/pendrive"
+```
+
+> O `DESTINO` deve estar montado antes da execução do serviço.
+
+---
+
+## 3. Crie o usuário do serviço
+
+O ideal é executar o backup como o próprio usuário que possui os diretórios em `$HOME`.
+
+Por exemplo, se o usuário for `usuario`, o serviço deverá utilizar:
+
+```ini
+User=usuario
+Group=usuario
+```
+
+Não é recomendado executar este script como `root` sem necessidade.
+
+---
+
+## 4. Crie o serviço
+
+Crie:
+
+```bash
+sudo nano /etc/systemd/system/backup-rsync.service
+```
+
+Utilize:
+
+```ini
+[Unit]
+Description=Backup contínuo com Rsync
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=simple
+
+User=usuario
+Group=usuario
+
+ExecStart=/opt/backup-rsync/backup.sh
+
+Restart=always
+RestartSec=10
+
+Environment=HOME=/home/usuario
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Substitua:
+
+```text
+usuario
+```
+
+pelo usuário Linux responsável pelos arquivos.
+
+---
+
+## 5. Recarregue o systemd
+
+```bash
+sudo systemctl daemon-reload
+```
+
+---
+
+## 6. Inicie o serviço
+
+```bash
+sudo systemctl start backup-rsync.service
+```
+
+---
+
+## 7. Verifique o status
+
+```bash
+sudo systemctl status backup-rsync.service
+```
+
+Um resultado esperado:
+
+```text
+● backup-rsync.service - Backup contínuo com Rsync
+     Loaded: loaded (/etc/systemd/system/backup-rsync.service)
+     Active: active (running)
+```
+
+---
+
+## 8. Habilite o início automático
+
+Para iniciar automaticamente com o sistema:
+
+```bash
+sudo systemctl enable backup-rsync.service
+```
+
+Ou faça as duas operações de uma vez:
+
+```bash
+sudo systemctl enable --now backup-rsync.service
+```
+
+---
+
+## 9. Parar o serviço
+
+```bash
+sudo systemctl stop backup-rsync.service
+```
+
+---
+
+## 10. Reiniciar
+
+```bash
+sudo systemctl restart backup-rsync.service
+```
+
+---
+
+## 11. Desabilitar inicialização automática
+
+```bash
+sudo systemctl disable backup-rsync.service
+```
+
+---
+
+# 📜 Logs do systemd
+
+Embora o script possua seu próprio sistema de logs, o `systemd` também registra a saída do serviço.
+
+Para acompanhar em tempo real:
+
+```bash
+journalctl -u backup-rsync.service -f
+```
+
+Para consultar as últimas mensagens:
+
+```bash
+journalctl -u backup-rsync.service -n 100
+```
+
+Para consultar logs desde o boot atual:
+
+```bash
+journalctl -u backup-rsync.service -b
+```
+
+---
+
+# 💾 Montagem do dispositivo
+
+O serviço pressupõe que o destino esteja disponível.
+
+Por exemplo:
+
+```text
+/mnt/pendrive
+```
+
+Antes de iniciar o backup, confirme:
+
+```bash
+mountpoint /mnt/pendrive
+```
+
+Se estiver montado:
+
+```text
+/mnt/pendrive is a mountpoint
+```
+
+Também é possível verificar:
+
+```bash
+findmnt /mnt/pendrive
+```
+
+### ⚠️ Importante
+
+O script atualmente **não verifica explicitamente se `DESTINO` é um ponto de montagem**.
+
+Isso é especialmente importante por causa do:
 
 ```text
 --delete
 ```
 
-Isso significa que arquivos removidos na origem também serão removidos do destino.
+Uma melhoria recomendada para uma versão futura é impedir a execução do `rsync` caso o dispositivo esperado não esteja montado.
 
-Por exemplo:
+---
+
+# 🧪 Testes
+
+Antes de utilizar o script em produção, recomenda-se testar cada componente individualmente.
+
+## Testar o Rsync
+
+Utilize temporariamente:
+
+```text
+--dry-run
+```
+
+Exemplo:
+
+```bash
+rsync -ahvi --delete --dry-run \
+    "$HOME/Downloads" \
+    "$DESTINO"
+```
+
+O `--dry-run` simula a operação sem alterar o destino.
+
+---
+
+## Testar o 7-Zip
+
+Teste manualmente:
+
+```bash
+7zz a -mx=9 teste.7z logs/2026-08-01
+```
+
+Verifique:
+
+```bash
+7zz t teste.7z
+```
+
+O comando `t` testa a integridade do arquivo compactado.
+
+---
+
+## Testar o script
+
+Antes de executar continuamente:
+
+```bash
+./backup.sh
+```
+
+confirme:
+
+1. `DESTINO` está correto;
+2. o dispositivo está montado;
+3. `rsync` está instalado;
+4. `7zz` está instalado;
+5. o usuário possui permissão nos diretórios;
+6. o destino possui espaço suficiente.
+
+---
+
+# ⚠️ Considerações importantes
+
+## `--delete` pode remover arquivos
+
+O script utiliza:
+
+```text
+rsync --delete
+```
+
+Isso transforma o destino em um **espelho da origem**.
+
+Exemplo:
 
 ```text
 Origem:
@@ -248,7 +840,7 @@ Documents/
 └── arquivo2.txt
 ```
 
-Se `arquivo2.txt` for removido da origem:
+Se `arquivo2.txt` for apagado da origem:
 
 ```text
 Origem:
@@ -256,505 +848,239 @@ Documents/
 └── arquivo1.txt
 ```
 
-na próxima sincronização ele também será removido do destino.
+ele também poderá ser removido do destino.
 
-### ⚠️ Atenção
+### Portanto:
 
-O destino funciona como um **espelho da origem**, e não como um histórico de versões.
-
-Se você precisa manter arquivos apagados ou versões antigas, este script não substitui uma solução de backup versionado.
+> **Este projeto é uma ferramenta de sincronização contínua, não um sistema completo de backup versionado.**
 
 ---
 
-# 📝 Sistema de logs
+# 🛡️ Backup x sincronização
 
-Cada execução gera um novo arquivo de log.
+É importante entender a diferença:
 
-A estrutura fica semelhante a:
+| Recurso                          | Este script  |
+| -------------------------------- | ----------:  |
+| Sincronização                    |           ✅ |
+| Espelhamento                     |           ✅ |
+| Backup de arquivos atuais        |           ✅ |
+| Histórico de versões             |           ❌ |
+| Recuperação de arquivos apagados |           ❌ |
+| Proteção contra ransomware       |           ❌ |
+| Snapshots                        |           ❌ |
+| Compactação dos logs             |           ✅ |
 
-```text
-logs/
-├── 2026-09-08/
-│   ├── 10-00-00.log
-│   ├── 10-05-00.log
-│   └── 10-10-00.log
-├── 2026-09-09/
-│   ├── 14-00-00.log
-│   └── 14-05-00.log
-└── 2026-09-10/
-    ├── 16-00-00.log
-    └── 16-05-00.log
-```
-
-Cada arquivo contém:
-
-* data e hora de início;
-* uptime do sistema;
-* caminho do arquivo de log;
-* etapas da sincronização;
-* arquivos alterados pelo `rsync`;
-* possíveis erros;
-* data e hora de término;
-* uptime no final da execução.
+Para uma estratégia de backup mais robusta, recomenda-se utilizar múltiplas cópias e, preferencialmente, algum mecanismo de versionamento ou snapshot.
 
 ---
 
-# 🗜️ Compactação mensal
+# 🛠️ Troubleshooting
 
-Para evitar que a quantidade de arquivos de log cresça indefinidamente, o script possui uma rotina de compactação automática.
+## `7zz: command not found`
 
-A função:
+Instale o 7-Zip ou confirme o nome do executável:
 
-```sh
-compactar_meses_anteriores()
+```bash
+command -v 7zz
 ```
 
-identifica diretórios de logs no formato:
-
-```text
-YYYY-MM-DD
-```
-
-e agrupa os diretórios pertencentes ao mesmo mês.
-
-Por exemplo:
-
-```text
-logs/
-├── 2026-07-01/
-├── 2026-07-02/
-├── 2026-07-03/
-├── ...
-└── 2026-07-31/
-```
-
-é transformado em:
-
-```text
-logs/
-└── 2026-07.7z
-```
-
-A compactação utiliza:
-
-```sh
-7zz a -mx=9
-```
-
-onde:
-
-* `a` = adiciona arquivos ao arquivo compactado;
-* `-mx=9` = nível máximo de compressão.
+Caso sua distribuição utilize outro nome, adapte o script.
 
 ---
 
-## 🔐 Segurança durante a compactação
+## `rsync: command not found`
 
-Os diretórios originais **só são removidos depois que o `7zz` termina com sucesso**.
+Instale:
 
-Fluxo:
-
-```text
-Diretórios do mês
-       │
-       ▼
-   7zz -mx=9
-       │
-   ┌───┴────┐
-   │        │
-Sucesso    Erro
-   │        │
-   ▼        ▼
-Remove    Mantém
-originais diretórios
-   │
-   ▼
-.7z válido
-```
-
-Se a compactação falhar, o arquivo `.7z` incompleto é removido:
-
-```sh
-rm -f "$ARQUIVO"
-```
-
-e os diretórios originais são preservados.
-
-Isso evita perder os logs caso o processo de compactação apresente algum problema.
-
----
-
-# 📅 Detecção automática da virada do mês
-
-O script verifica o mês atual em cada ciclo:
-
-```sh
-MES_ATUAL="$(date '+%Y-%m')"
-```
-
-O mês atual permanece descompactado.
-
-Quando um novo mês começa, os diretórios do mês anterior passam a ser candidatos à compactação.
-
-Por exemplo, durante:
-
-```text
-2026-09
-```
-
-os logs de:
-
-```text
-2026-09-01
-2026-09-02
-2026-09-03
-...
-```
-
-continuam normalmente como diretórios.
-
-Já os logs de:
-
-```text
-2026-08-01
-2026-08-02
-...
-2026-08-31
-```
-
-podem ser compactados em:
-
-```text
-2026-08.7z
+```bash
+sudo apt install rsync
 ```
 
 ---
 
-# ⏱️ Intervalo entre execuções
+## Permission denied
 
-Após concluir todas as sincronizações, o script executa:
+Verifique as permissões:
 
-```sh
-sleep 300
+```bash
+ls -ld "$HOME/Downloads"
+ls -ld "$DESTINO"
 ```
 
-300 segundos correspondem a:
+Quando executado via `systemd`, confirme principalmente:
 
-```text
-5 minutos
+```ini
+User=usuario
+Group=usuario
+Environment=HOME=/home/usuario
 ```
-
-Portanto, o backup é executado continuamente em ciclos de aproximadamente 5 minutos.
-
-> O intervalo é contado após o término de uma execução. Como cada etapa também possui `sleep 5`, o intervalo real entre o início de dois ciclos será superior a 5 minutos.
 
 ---
 
-# 📊 Uptime
+## O serviço não inicia
 
-O script registra o uptime do sistema utilizando:
+Verifique:
 
-```sh
-/proc/uptime
+```bash
+systemctl status backup-rsync.service
 ```
 
-O resultado é convertido para um formato mais legível:
+Depois:
 
-```text
-2d 7h 34m 21s
+```bash
+journalctl -u backup-rsync.service -n 100 --no-pager
 ```
 
-Exemplo:
+Confirme também:
 
-```text
-Inicio - Data: 10/09/2026 16:30:02 | Uptime: 12d 4h 17m 33s
+```bash
+ls -l /opt/backup-rsync/backup.sh
 ```
 
-Isso pode ser útil para correlacionar problemas de sincronização com reinicializações ou indisponibilidade do sistema.
+O script deve possuir permissão de execução.
 
 ---
 
-# 🖥️ Logs no terminal e no arquivo
+## O destino não está sendo encontrado
 
-Durante cada execução, a saída padrão e os erros são redirecionados para o arquivo de log:
+Confirme:
 
-```sh
-exec >>"$LOG_FILE" 2>&1
+```bash
+mountpoint /mnt/pendrive
 ```
 
-Antes do próximo ciclo, o `stdout` e `stderr` originais são restaurados:
+e:
 
-```sh
-exec 1>&3 2>&4
-exec 3>&- 4>&-
+```bash
+findmnt /mnt/pendrive
 ```
-
-Assim, as mensagens da execução ficam registradas no arquivo sem deixar o terminal permanentemente redirecionado.
 
 ---
 
-# 📌 Opções utilizadas no Rsync
+## Arquivos foram apagados do destino
 
-O script utiliza:
-
-```text
-rsync -ahvi --delete --info=NAME0
-```
-
-### `-a`
-
-Modo archive.
-
-Preserva diversas propriedades dos arquivos, além de realizar a sincronização recursiva.
-
-### `-h`
-
-Exibe tamanhos em formato legível.
-
-Exemplo:
-
-```text
-1.2G
-500M
-20K
-```
-
-### `-v`
-
-Modo verbose, fornecendo informações sobre a operação.
-
-### `-i`
-
-Exibe informações sobre quais arquivos foram alterados.
-
-### `--delete`
-
-Remove do destino arquivos que não existem mais na origem.
-
-### `--info=NAME0`
-
-Reduz determinadas mensagens de nomes de arquivos do Rsync, deixando a saída mais adequada para o log.
-
----
-
-# 🧪 Testando antes de executar
-
-Antes de utilizar o script com `--delete`, é altamente recomendável realizar um teste.
-
-Uma opção é adicionar temporariamente:
-
-```text
---dry-run
-```
-
-Por exemplo:
-
-```sh
-rsync -ahvi --delete --dry-run "$HOME/Downloads" "$DESTINO"
-```
-
-O `--dry-run` simula a operação sem modificar o destino.
-
-Isso permite verificar se:
-
-* o destino está correto;
-* os diretórios estão sendo interpretados corretamente;
-* arquivos serão apagados;
-* arquivos serão copiados;
-* o comportamento está de acordo com o esperado.
-
----
-
-# 🚨 Cuidados importantes
-
-## 1. Verifique o `DESTINO`
-
-Antes de iniciar o script, confirme:
-
-```sh
-DESTINO="/mnt/pendrive"
-```
-
-Um destino incorreto combinado com `--delete` pode causar perda de dados no diretório apontado.
-
----
-
-## 2. O dispositivo precisa estar montado
-
-O script pressupõe que:
-
-```text
-/mnt/pendrive
-```
-
-seja o ponto de montagem correto.
-
-Se o dispositivo for desconectado ou desmontado, o comportamento do `rsync` deve ser avaliado cuidadosamente antes de utilizar o script em produção.
-
-É recomendável implementar uma verificação de montagem caso o script seja utilizado como solução permanente.
-
----
-
-## 3. O script não é um backup versionado
-
-Embora seja utilizado como backup, o comportamento principal é de **sincronização/espelhamento**.
-
-Com:
+Verifique se o comportamento está relacionado ao:
 
 ```text
 --delete
 ```
 
-uma exclusão na origem pode ser propagada para o destino.
+Caso não queira que arquivos sejam removidos do destino quando desaparecerem da origem, remova essa opção.
 
-Para proteção contra:
-
-* exclusões acidentais;
-* ransomware;
-* corrupção de arquivos;
-* versões anteriores;
-
-é recomendável utilizar também uma estratégia de backup versionado ou snapshots.
+> Faça isso conscientemente: sem `--delete`, o destino deixa de ser um espelho exato da origem.
 
 ---
 
-# 📁 Estrutura esperada
+# 📁 Estrutura do projeto
 
-Após executar o script, o repositório poderá ficar assim:
+Uma estrutura recomendada para o repositório:
 
 ```text
-.
-├── backup.sh
-└── logs/
-    ├── 2026-09-10/
-    │   ├── 16-00-00.log
-    │   ├── 16-05-00.log
-    │   └── 16-10-00.log
-    ├── 2026-08.7z
-    └── ...
+rsync/
+├── rsync.sh
+├── README.md
+├── LICENSE
+└── systemd/
+    └── rsync.service
 ```
 
----
+O diretório `logs/` pode ser criado automaticamente pelo script e, dependendo da estratégia do projeto, pode ser incluído no `.gitignore`:
 
-# 🔧 Personalização
-
-## Alterar o destino
-
-Edite:
-
-```sh
-DESTINO="/mnt/pendrive"
-```
-
----
-
-## Alterar o intervalo
-
-Atualmente:
-
-```sh
-sleep 300
-```
-
-Para executar a cada 10 minutos:
-
-```sh
-sleep 600
-```
-
-Para executar a cada 1 minuto:
-
-```sh
-sleep 60
-```
-
----
-
-## Adicionar outro diretório
-
-Para sincronizar, por exemplo, `Desktop`:
-
-```sh
-echo "[6/8] Sincronizando diretório Desktop"
-rsync -ahvi --delete --info=NAME0 "$HOME/Desktop" "$DESTINO" || \
-    echo "ERRO: rsync de Desktop retornou código $?"
-```
-
-Depois, ajuste a numeração das etapas seguintes.
-
----
-
-# ▶️ Execução em segundo plano
-
-Para deixar o script executando mesmo após fechar o terminal, uma opção simples é:
-
-```bash
-nohup ./backup.sh > backup-console.log 2>&1 &
-```
-
-Para verificar o processo:
-
-```bash
-ps aux | grep backup.sh
-```
-
-Entretanto, para uso permanente, é mais indicado configurar o script como um serviço do sistema, por exemplo utilizando **systemd**.
-
----
-
-# 🛑 Encerrando o script
-
-Como o script utiliza:
-
-```sh
-while true
-```
-
-ele continuará executando indefinidamente.
-
-Para interrompê-lo enquanto estiver no terminal:
-
-```text
-Ctrl+C
+```gitignore
+logs/
 ```
 
 ---
 
 # 💡 Melhorias futuras
 
-Algumas melhorias que podem ser implementadas:
-
-* [ ] Verificar se o dispositivo de destino está realmente montado
-* [ ] Verificar espaço livre antes do `rsync`
-* [ ] Registrar códigos de retorno detalhados
-* [ ] Enviar notificações em caso de erro
-* [ ] Criar uma opção de `--dry-run`
-* [ ] Permitir configurar diretórios por variáveis
-* [ ] Implementar lock para impedir duas instâncias simultâneas
-* [ ] Utilizar `systemd` para gerenciamento do serviço
-* [ ] Adicionar retenção de arquivos `.7z` antigos
-* [ ] Criar backups versionados
-* [ ] Adicionar rotação dos logs
+* [ ] Verificar automaticamente se `DESTINO` está montado
+* [ ] Impedir execução quando o destino não estiver disponível
+* [ ] Verificar espaço livre antes do backup
+* [ ] Implementar lock para impedir múltiplas instâncias
+* [ ] Adicionar suporte a `--dry-run`
 * [ ] Permitir configuração através de arquivo externo
+* [ ] Adicionar notificações de erro
+* [ ] Criar sistema de retenção dos arquivos `.7z`
+* [ ] Implementar backup versionado
+* [ ] Adicionar snapshots
+* [ ] Melhorar tratamento de códigos de retorno do `rsync`
+* [ ] Criar testes automatizados
+* [ ] Adicionar configuração `systemd` ao repositório
+* [ ] Adicionar verificação de integridade dos arquivos `.7z`
+* [ ] Permitir seleção dos diretórios através de configuração
 
 ---
 
-# 📜 Licença
+# 📄 Licença
 
-Este projeto pode ser utilizado, modificado e distribuído conforme os termos definidos.
-
-<!-- Caso este projeto seja publicado com uma licença específica, substitua esta seção pela licença escolhida, por exemplo: -->
+Este projeto está disponível sob a licença MIT.
 
 ```text
 MIT License
+
+Copyright (c) 2026
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files, to deal in the Software
+without restriction, including without limitation the rights to use, copy,
+modify, merge, publish, distribute, sublicense, and/or sell copies of the
+Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 ```
 
 ---
 
-## ⚠️ Aviso
+# ⚠️ Aviso
 
-Este script realiza operações potencialmente destrutivas no destino devido ao uso do `rsync --delete`.
+Este software executa operações de sincronização potencialmente destrutivas devido ao uso do:
 
-**Faça testes com `--dry-run` e confirme cuidadosamente o valor de `DESTINO` antes da primeira execução.**
+```text
+rsync --delete
+```
 
-O autor não se responsabiliza por perda de dados decorrente de configuração incorreta, falhas de armazenamento ou uso inadequado do script.
+**Sempre valide o destino antes da primeira execução e utilize `--dry-run` durante os testes.**
+
+Mantenha cópias adicionais dos dados importantes. Um único dispositivo de armazenamento não deve ser considerado uma estratégia completa de backup.
+
+---
+
+## ⭐ Contribuições
+
+Pull requests, sugestões e melhorias são bem-vindas.
+
+Antes de enviar alterações, recomenda-se testar o script em um ambiente controlado e verificar especialmente qualquer modificação relacionada ao `rsync --delete`.
+
+---
+
+## 📌 Resumo
+
+```text
+┌──────────────────────────────────────────────┐
+│              BACKUP CONTÍNUO                 │
+├──────────────────────────────────────────────┤
+│                                              │
+│  $HOME/Downloads  ──────┐                    │
+│  $HOME/Pictures   ──────┤                    │
+│  $HOME/Videos     ──────┤                    │
+│  $HOME/Music      ──────┤──► Rsync ──►       │
+│  $HOME/Documents  ──────┘          /mnt/...  │
+│                                              │
+│  Logs ──► YYYY-MM-DD/HH-MM-SS.log            │
+│                                              │
+│  Mês anterior ──► YYYY-MM.7z                 │
+│                                              │
+│  Execução ──► a cada 5 minutos               │
+│                                              │
+└──────────────────────────────────────────────┘
+```
+
+**Backup contínuo, simples e automatizado para ambientes Linux.**
