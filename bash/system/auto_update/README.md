@@ -1,248 +1,225 @@
-# Script de Atualização Automática de Segurança em Linux
-### Objetivo do Script
+# 🔐 Linux Security Auto Update
 
-Este script tem como objetivo:
+[![Shell Script](https://img.shields.io/badge/Shell-Bash-4EAA25?logo=gnu-bash\&logoColor=white)](#)
+[![Linux](https://img.shields.io/badge/OS-Linux-FCC624?logo=linux\&logoColor=black)](#)
+[![Cron](https://img.shields.io/badge/Automation-Cron-222222?logo=clockify\&logoColor=white)](#)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](#license)
+[![Status](https://img.shields.io/badge/Status-Stable-success)](#)
 
-Atualizar apenas pacotes de segurança (quando a distribuição suporta) \
-Executar somente se houver atualizações disponíveis \
-Funcionar em múltiplas distribuições Linux: \
-Debian / Ubuntu \
-Fedora / RHEL / Rocky / Alma \
-OpenSUSE Leap / Tumbleweed \
-Arch Linux / Manjaro \
-Registrar todas as ações em log \
-Ser executado automaticamente via cron
+> **Automação de atualizações de segurança para sistemas Linux utilizando Bash.**
 
-### Localização recomendada
+O **Linux Security Auto Update** é um script Bash desenvolvido para detectar automaticamente o gerenciador de pacotes disponível no sistema, verificar atualizações e aplicar correções de segurança de acordo com as capacidades de cada distribuição.
 
-```bash
-/usr/local/bin/auto_update.sh
-```
+O projeto foi pensado para **ser simples, transparente, auditável e fácil de implantar em servidores Linux**, podendo ser executado manualmente ou de forma automatizada através do `cron`.
 
-Motivo:
+---
 
-Diretório padrão para scripts administrativos \
-Disponível para todos os usuários \
-Não é sobrescrito por atualizações do sistema
+## ✨ Principais recursos
 
-### Tornar executável
+* 🐧 **Detecção automática da distribuição**
+* 🔐 Atualizações de segurança quando suportadas pelo sistema
+* 📦 Suporte a múltiplos gerenciadores de pacotes
+* 📝 Registro das operações em arquivo de log
+* ⏰ Execução automatizada através do `cron`
+* 🚫 Não executa comandos em distribuições não reconhecidas
+* 🖥️ Compatível com ambientes desktop e servidores
+* ⚙️ Não depende de ferramentas externas complexas
+* 🔎 Execução manual para validação e troubleshooting
 
-```bash
-sudo chmod +x /usr/local/bin/auto_update.sh
-```
+---
 
-### Código do script
+## 🐧 Distribuições suportadas
 
-```bash
-#!/bin/bash
-```
+| Distribuição / Família | Gerenciador | Estratégia                                     |
+| ---------------------- | ----------- | ---------------------------------------------- |
+| Debian                 | APT         | Atualizações de segurança                      |
+| Ubuntu                 | APT         | Atualizações de segurança                      |
+| Fedora                 | DNF         | Atualizações `security`                        |
+| RHEL                   | DNF         | Atualizações `security`                        |
+| Rocky Linux            | DNF         | Atualizações `security`                        |
+| AlmaLinux              | DNF         | Atualizações `security`                        |
+| openSUSE Leap          | Zypper      | Patches `security`                             |
+| openSUSE Tumbleweed    | Zypper      | Conforme modelo de atualização da distribuição |
+| Arch Linux             | Pacman      | Atualização geral                              |
+| Manjaro                | Pacman      | Atualização geral                              |
 
-### Shebang
+> ⚠️ **Importante:** nem todas as distribuições possuem um mecanismo equivalente para separar atualizações de segurança das demais atualizações.
 
-Indica que o script deve ser executado pelo Bash \
-Garante compatibilidade mesmo quando chamado pelo cron
+---
 
-```bash
-LOGFILE="/var/log/auto_update.log"
-DATE=$(date '+%Y-%m-%d %H:%M:%S')
-```
+## 🏗️ Arquitetura
 
-### Variáveis globais
-
-Variável	Função \
-LOGFILE	Arquivo onde tudo será registrado \
-DATE	Data e hora atuais, usadas no log \
-Formato escolhido para facilitar leitura e auditoria.
-
-```bash
-echo "[$DATE] Verificando atualizações de segurança..." >> "$LOGFILE" \
-```
-
-Registro no log adiciona ao arquivo sem apagar conteúdo anterior \
-Todas as execuções ficam registradas
-
-### Detecção automática da distribuição
-O script identifica a distro verificando qual gerenciador de pacotes existe no sistema:
-
-```bash
-command -v apt
-command -v dnf
-command -v zypper
-command -v pacman
-```
-
-Se o comando existir, aquela distro é assumida.
-
-### Debian / Ubuntu (APT)
-
-```bash
-if command -v apt >/dev/null 2>&1; then
-```
-
-Detecta sistemas baseados em APT
-
-```bash
-apt update -qq
-```
-
-Atualiza a lista de pacotes \
--qq = modo silencioso (ideal para cron)
-
-```bash
-SECURITY_UPDATES=$(apt list --upgradable 2>/dev/null | grep -i security)
-```
-
-Verificação de updates de segurança \
-Lista pacotes atualizáveis \
-Filtra apenas os repositórios de segurança
-
-```bash
-if [ -n "$SECURITY_UPDATES" ]; then
-```
-
-Executa atualização somente se algo foi encontrado
-
-```bash
-unattended-upgrade -d
-```
-
-### Atualização segura
-
-Ferramenta oficial do Ubuntu/Debian \
-Instala somente pacotes de segurança \
-Evita upgrades perigosos
-
-### Fedora / RHEL / Rocky / Alma (DNF)
-
-```bash
-dnf updateinfo list security --quiet
-```
-
-Consulta apenas avisos de segurança \
-Não altera o sistema
-
-```bash
-dnf upgrade --security -y
-```
-
-Segurança apenas \
-Atualiza somente pacotes marcados como security
-
-> -y evita interação humana
-
-### OpenSUSE (Zypper)
-
-```bash
-zypper list-patches --category security
-```
-
-OpenSUSE categoriza patches oficialmente \
-Ideal para ambientes corporativos
-
-```bash
-zypper patch --category security -y
-```
-
-Aplica somente patches de segurança \
-Não altera versões principais \
-Extremamente seguro
-
-### Arch Linux / Manjaro (Pacman)
-
-```bash
-pacman -Qu
-```
-
-Verifica se existem atualizações disponíveis
-
-**Importante**
-Arch Linux não separa pacotes de segurança. \
-Toda atualização pode conter correções críticas.
-
-```bash
-pacman -Su --noconfirm
-```
-
-Atualiza somente se houver pacotes pendentes \
-Não atualiza AUR (intencional)
-
-### Caso nenhuma distro seja reconhecida
-
-```bash
-else
-    echo "Gerenciador de pacotes não suportado"
-    exit 1
-```
-
-Evita comportamento inesperado \
-Encerra com erro
-
-### Finalização do processo
-
-```bash
-echo "Processo finalizado." >> "$LOGFILE"
-```
-
-Marca o fim da execução no log
-
-### Log gerado
-Exemplo de log:
+O fluxo de execução é simples:
 
 ```text
-[2026-01-18 02:00:01] Verificando atualizações de segurança...
-[2026-01-18 02:00:03] Sistema Debian/Ubuntu (APT)
-[2026-01-18 02:00:10] Atualizações de segurança encontradas.
-[2026-01-18 02:00:45] Processo finalizado.
+                         ┌──────────────────┐
+                         │      Início      │
+                         └────────┬─────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────┐
+                       │ Detectar gerenciador│
+                       │     de pacotes      │
+                       └──────────┬──────────┘
+                                  │
+             ┌────────────────────┼────────────────────┐
+             │                    │                    │
+             ▼                    ▼                    ▼
+           ┌─────┐              ┌─────┐             ┌───────┐
+           │ APT │              │ DNF │             │Zypper │
+           └──┬──┘              └──┬──┘             └───┬───┘
+              │                    │                    │
+              │                    │                    │
+              └────────────────────┼────────────────────┘
+                                   │
+                                   ▼
+                              ┌──────────┐
+                              │ Pacman  │
+                              └────┬─────┘
+                                   │
+                                   ▼
+                       ┌─────────────────────┐
+                       │ Verificar updates   │
+                       └──────────┬──────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────┐
+                       │ Aplicar atualizações│
+                       └──────────┬──────────┘
+                                  │
+                                  ▼
+                       ┌─────────────────────┐
+                       │ Registrar resultado │
+                       │       no log        │
+                       └──────────┬──────────┘
+                                  │
+                                  ▼
+                         ┌──────────────────┐
+                         │    Finalização   │
+                         └──────────────────┘
 ```
 
-### Agendamento automático (cron)
+---
+
+## 📁 Estrutura do projeto
+
+Uma estrutura recomendada para o repositório:
+
+```text
+bash/
+└── system/
+    └── auto_update/
+        ├── README.md
+        └── auto_update.sh
+
+```
+
+### Arquivos
+
+| Arquivo          | Descrição                   |
+| ---------------- | --------------------------- |
+| `auto_update.sh` | Script principal            |
+| `README.md`      | Documentação do projeto     |
+| `LICENSE`        | Licença open-source         |
+<!-- | `.gitignore`     | Arquivos ignorados pelo Git |
+| `docs/`          | Documentação complementar   | -->
+
+---
+
+# 🚀 Instalação
+
+## Requisitos
+
+Antes de instalar, certifique-se de que:
+
+* O sistema utiliza uma distribuição Linux suportada;
+* O Bash está disponível;
+* O usuário possui privilégios administrativos;
+* Os repositórios de pacotes estão corretamente configurados;
+* Existe conectividade com os repositórios quando necessário.
+
+Verifique o Bash:
 
 ```bash
-sudo crontab -e
+bash --version
 ```
+
+---
+
+## 1. Clonar o repositório
 
 ```bash
-0 */2 * * * /usr/local/bin/auto_update.sh
+git clone https://github.com/terminal-junior/scripts-collections.git
+cd scripts-collections/bash/system/auto_update
 ```
 
-## Interpretação:
+<!-- > Substitua `SEU-USUARIO` pelo proprietário real do repositório. -->
 
-Campo	Valor \
-Minuto	0 \
-Hora	A cada 2 \
-Dia	Todos \
-Mês	Todos \
-Semana	Todos
+---
 
-### Boas práticas recomendadas
+## 2. Instalar o script
 
-✔ Executar como root \
-✔ Usar apenas pacotes oficiais \
-✔ Monitorar o log periodicamente \
-✔ Testar em ambiente de homologação
+Copie o script para `/usr/local/bin`:
 
-### Limitações conhecidas
+```bash
+sudo cp auto_update.sh /usr/local/bin/auto_update.sh
+```
 
-Distro	Limitação \
-Arch	Não separa segurança \
-Debian	Depende do unattended-upgrades \
-Todas	Não reinicia automaticamente
+Aplique as permissões:
 
-### Testar o script manualmente (passo obrigatório)
+```bash
+sudo chmod 755 /usr/local/bin/auto_update.sh
+```
 
-Antes de confiar no cron, execute manualmente:
+Confirme:
+
+```bash
+ls -l /usr/local/bin/auto_update.sh
+```
+
+Resultado esperado:
+
+```text
+-rwxr-xr-x 1 root root ... /usr/local/bin/auto_update.sh
+```
+
+---
+
+# ▶️ Utilização
+
+## Execução manual
+
+Execute:
 
 ```bash
 sudo /usr/local/bin/auto_update.sh
 ```
 
-Depois verifique o log:
+O script detectará automaticamente o gerenciador de pacotes disponível e executará a rotina correspondente.
+
+---
+
+## 📋 Logs
+
+Por padrão, os registros são armazenados em:
+
+```text
+/var/log/auto_update.log
+```
+
+Visualizar os últimos registros:
 
 ```bash
 sudo tail -n 20 /var/log/auto_update.log
 ```
 
-Você deve ver algo como:
+Acompanhar em tempo real:
+
+```bash
+sudo tail -f /var/log/auto_update.log
+```
+
+Exemplo:
 
 ```text
 [2026-01-18 14:32:01] Verificando atualizações de segurança...
@@ -251,7 +228,466 @@ Você deve ver algo como:
 [2026-01-18 14:32:05] Processo finalizado.
 ```
 
-Se isso funciona, o script está correto. \
-Se não funcionar manualmente, o cron nunca funcionará.
+---
+
+# ⏰ Automação com Cron
+
+Para executar automaticamente, edite o `crontab` do usuário `root`:
+
+```bash
+sudo crontab -e
+```
+
+### Executar a cada 2 horas
+
+```cron
+0 */2 * * * /usr/local/bin/auto_update.sh
+```
+
+### Executar diariamente às 02:00
+
+```cron
+0 2 * * * /usr/local/bin/auto_update.sh
+```
+
+### Executar uma vez por semana
+
+Exemplo: domingo às 03:00.
+
+```cron
+0 3 * * 0 /usr/local/bin/auto_update.sh
+```
 
 ---
+
+# 🔍 Verificação do Cron
+
+Depois de configurar o agendamento, confirme a entrada:
+
+```bash
+sudo crontab -l
+```
+
+Para verificar mensagens relacionadas ao cron, utilize os mecanismos de log da sua distribuição.
+
+Exemplos:
+
+### Debian / Ubuntu
+
+```bash
+sudo journalctl -u cron
+```
+
+### Fedora / RHEL
+
+```bash
+sudo journalctl -u crond
+```
+
+---
+
+# 🔐 Estratégia por gerenciador
+
+O comportamento do script varia de acordo com o gerenciador de pacotes.
+
+## APT
+
+Em sistemas Debian/Ubuntu, o script:
+
+1. Atualiza os índices de pacotes;
+2. Verifica pacotes atualizáveis;
+3. Identifica atualizações relacionadas a segurança;
+4. Executa a rotina configurada para atualização.
+
+Exemplo:
+
+```bash
+apt update -qq
+```
+
+A verificação pode utilizar:
+
+```bash
+apt list --upgradable 2>/dev/null | grep -i security
+```
+
+Quando o ambiente estiver configurado para utilizar `unattended-upgrades`, essa ferramenta pode ser utilizada para aplicar as atualizações apropriadas.
+
+---
+
+## DNF
+
+Sistemas Fedora, RHEL, Rocky Linux e AlmaLinux podem utilizar:
+
+```bash
+dnf updateinfo list security --quiet
+```
+
+Para aplicar atualizações classificadas como de segurança:
+
+```bash
+dnf upgrade --security -y
+```
+
+---
+
+## Zypper
+
+Em sistemas openSUSE:
+
+```bash
+zypper list-patches --category security
+```
+
+Para aplicar patches classificados como segurança:
+
+```bash
+zypper patch --category security -y
+```
+
+---
+
+## Pacman
+
+No Arch Linux e Manjaro:
+
+```bash
+pacman -Qu
+```
+
+O Arch Linux não possui uma separação equivalente entre atualizações normais e atualizações de segurança.
+
+Por isso, quando existem pacotes pendentes, a atualização é realizada de forma geral:
+
+```bash
+pacman -Su --noconfirm
+```
+
+> ⚠️ Isso significa que **Arch Linux e Manjaro não estão limitados exclusivamente a patches de segurança**.
+
+O AUR também não é atualizado pelo `pacman` nesse processo.
+
+---
+
+# 🧪 Testes
+
+Antes de habilitar a execução automática, sempre teste manualmente.
+
+## 1. Executar
+
+```bash
+sudo /usr/local/bin/auto_update.sh
+```
+
+## 2. Verificar o log
+
+```bash
+sudo tail -n 20 /var/log/auto_update.log
+```
+
+## 3. Confirmar resultado
+
+Procure mensagens indicando:
+
+```text
+Verificando atualizações...
+```
+
+e:
+
+```text
+Processo finalizado.
+```
+
+### Regra fundamental
+
+> **Se o script não funciona manualmente, o `cron` não irá corrigir o problema.**
+
+O `cron` possui um ambiente de execução diferente do seu terminal interativo. Portanto, problemas de caminho, permissões, variáveis de ambiente ou dependências devem ser resolvidos antes da automação.
+
+---
+
+# 🛡️ Segurança
+
+Este projeto executa comandos administrativos e pode modificar pacotes instalados no sistema.
+
+Por isso:
+
+### Recomendações
+
+* Execute inicialmente em ambiente de testes;
+* Faça backup de servidores críticos;
+* Utilize apenas repositórios confiáveis;
+* Revise as configurações do gerenciador de pacotes;
+* Monitore os logs;
+* Não execute scripts modificados de fontes desconhecidas;
+* Revise o código antes de instalar em produção;
+* Defina uma política de reinicialização adequada.
+
+### Princípio de menor privilégio
+
+O script precisa de privilégios administrativos para instalar atualizações.
+
+Por isso, recomenda-se:
+
+```bash
+sudo chmod 755 /usr/local/bin/auto_update.sh
+```
+
+e manter o arquivo sob propriedade de `root`:
+
+```bash
+sudo chown root:root /usr/local/bin/auto_update.sh
+```
+
+---
+
+# ⚠️ Limitações conhecidas
+
+| Limitação             | Descrição                                                                        |
+| --------------------- | -------------------------------------------------------------------------------- |
+| Arch / Manjaro        | Não possuem uma classificação de segurança equivalente ao DNF                    |
+| APT                   | A identificação de pacotes de segurança depende da configuração dos repositórios |
+| `unattended-upgrades` | Pode exigir configuração prévia                                                  |
+| Repositórios          | Atualizações dependem da disponibilidade dos repositórios                        |
+| Reinicialização       | O script não reinicia automaticamente o sistema                                  |
+| AUR                   | Não é atualizado pelo `pacman`                                                   |
+| Kernel                | Algumas atualizações podem exigir reboot para entrarem efetivamente em uso       |
+
+---
+
+# 🔄 Pós-atualização e reboot
+
+O script **não reinicia automaticamente o sistema**.
+
+Isso é intencional.
+
+Reinicializações automáticas podem causar indisponibilidade inesperada em:
+
+* Servidores;
+* Máquinas virtuais;
+* Sistemas críticos;
+* Serviços de produção;
+* Bancos de dados;
+* Ambientes de alta disponibilidade.
+
+A decisão de reiniciar deve fazer parte da política de manutenção do ambiente.
+
+---
+
+# 🐛 Troubleshooting
+
+## O script não executa
+
+Verifique as permissões:
+
+```bash
+ls -l /usr/local/bin/auto_update.sh
+```
+
+Teste diretamente com Bash:
+
+```bash
+sudo bash /usr/local/bin/auto_update.sh
+```
+
+---
+
+## O cron não executa
+
+Verifique o agendamento:
+
+```bash
+sudo crontab -l
+```
+
+Depois consulte o serviço:
+
+```bash
+sudo systemctl status cron
+```
+
+ou:
+
+```bash
+sudo systemctl status crond
+```
+
+---
+
+## O gerenciador não foi detectado
+
+Verifique manualmente:
+
+```bash
+command -v apt
+command -v dnf
+command -v zypper
+command -v pacman
+```
+
+Pelo menos um deles deve retornar um caminho, por exemplo:
+
+```text
+/usr/bin/apt
+```
+
+---
+
+## Não existem atualizações
+
+Isso não necessariamente indica um problema.
+
+O sistema pode simplesmente estar atualizado.
+
+Verifique o log:
+
+```bash
+sudo tail -n 50 /var/log/auto_update.log
+```
+
+---
+
+## O script funciona manualmente, mas não pelo cron
+
+Verifique:
+
+1. Caminhos absolutos dos comandos;
+2. Permissões;
+3. Ambiente do `cron`;
+4. Logs do sistema;
+5. Serviço `cron`/`crond`;
+6. Permissões do arquivo de log.
+
+---
+
+# 📊 Exit Codes
+
+Para facilitar automação e monitoramento, recomenda-se utilizar códigos de saída consistentes.
+
+| Código | Significado                        |
+| -----: | ---------------------------------- |
+|    `0` | Execução concluída                 |
+|    `1` | Erro ou distribuição não suportada |
+|    `2` | Falha na verificação/atualização   |
+
+> A implementação final dos códigos depende da versão do `auto_update.sh` utilizada.
+
+---
+
+# 🗺️ Roadmap
+
+Possíveis melhorias futuras:
+
+* [ ] Suporte a `systemd timers`
+* [ ] Rotação automática dos logs
+<!-- * [ ] Notificações por e-mail
+* [ ] Integração com Slack/Discord -->
+* [ ] Relatório de pacotes atualizados
+* [ ] Detecção de necessidade de reboot
+* [ ] Modo `--dry-run`
+<!-- * [ ] Arquivo de configuração externo -->
+* [ ] Argumentos CLI (`--check`, `--update`, `--verbose`)
+* [ ] Testes automatizados
+<!-- * [ ] CI com GitHub Actions -->
+* [ ] Melhor tratamento de erros
+* [ ] Lock para impedir execuções simultâneas
+
+---
+
+# 🤝 Contribuindo
+
+Contribuições são bem-vindas!
+
+## Fluxo recomendado
+
+1. Faça um fork do projeto;
+2. Crie uma branch para sua alteração:
+
+```bash
+git checkout -b feature/minha-melhoria
+```
+
+3. Faça suas alterações;
+4. Teste em uma distribuição compatível;
+5. Faça o commit:
+
+```bash
+git commit -m "feat: adiciona nova funcionalidade"
+```
+
+6. Envie a branch:
+
+```bash
+git push origin feature/minha-melhoria
+```
+
+7. Abra um Pull Request.
+
+### Antes de enviar um Pull Request
+
+Certifique-se de:
+
+* [ ] O script continua executável;
+* [ ] Não existem comandos destrutivos desnecessários;
+* [ ] A alteração foi testada;
+* [ ] A documentação foi atualizada;
+* [ ] O log continua funcionando;
+* [ ] O comportamento em caso de erro foi validado.
+
+---
+
+# 📝 Versionamento
+
+O projeto recomenda seguir [Semantic Versioning](https://semver.org/).
+
+Formato:
+
+```text
+MAJOR.MINOR.PATCH
+```
+
+Exemplo:
+
+```text
+v1.2.0
+```
+
+Onde:
+
+* **MAJOR** — alterações incompatíveis;
+* **MINOR** — novas funcionalidades compatíveis;
+* **PATCH** — correções e melhorias compatíveis.
+
+---
+
+# 📜 Licença
+
+Este projeto está disponível sob a licença **MIT**.
+
+Consulte o arquivo [`LICENSE`](LICENSE) para obter o texto completo da licença.
+
+---
+
+# ⚖️ Disclaimer
+
+Este software pode executar operações privilegiadas e modificar componentes do sistema operacional.
+
+O autor e os colaboradores não se responsabilizam por indisponibilidade, perda de dados, incompatibilidade de pacotes ou qualquer outro dano decorrente do uso do software.
+
+**Sempre valide o comportamento em ambiente de testes antes de utilizá-lo em produção.**
+
+---
+
+# ⭐ Contribua
+
+Se este projeto foi útil para você, considere deixar uma ⭐ no GitHub.
+
+Issues, sugestões, melhorias e Pull Requests são bem-vindos.
+
+---
+
+<p align="center">
+  <strong>Linux Security Auto Update</strong><br>
+  Automação simples, transparente e auditável para manutenção de sistemas Linux.
+</p>
