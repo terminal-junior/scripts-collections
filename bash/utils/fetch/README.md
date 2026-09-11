@@ -1,10 +1,18 @@
 # 🖥️ Fastfetch / Neofetch Installer
 
-Script Bash para **detectar automaticamente o gerenciador de pacotes do sistema Linux e instalar uma ferramenta de informações do sistema**.
+[![Shell Script](https://img.shields.io/badge/Shell-Bash-4EAA25?logo=gnu-bash\&logoColor=white)](#)
+[![Linux](https://img.shields.io/badge/OS-Linux-FCC624?logo=linux\&logoColor=black)](#)
+[![ShellCheck](https://img.shields.io/badge/ShellCheck-Passed-success?logo=gnu-bash\&logoColor=white)](#)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Stable-success)](#)
+[![GitHub Stars](https://img.shields.io/github/stars/SEU-USUARIO/fastfetch-neofetch-installer?style=flat\&logo=github)](https://github.com/SEU-USUARIO/fastfetch-neofetch-installer/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/SEU-USUARIO/fastfetch-neofetch-installer?style=flat\&logo=github)](https://github.com/SEU-USUARIO/fastfetch-neofetch-installer/issues)
 
-O script prioriza o **Fastfetch** e, caso ele não esteja disponível nos repositórios configurados, tenta instalar o **Neofetch** como alternativa.
+> **Automação simples para instalar e executar Fastfetch ou Neofetch em diferentes distribuições Linux.**
 
-O objetivo é fornecer uma instalação simples e automatizada, evitando que o usuário precise identificar manualmente a distribuição ou utilizar comandos específicos de cada gerenciador de pacotes.
+O **Fastfetch / Neofetch Installer** é um script Bash desenvolvido para detectar automaticamente o gerenciador de pacotes disponível no sistema, verificar se o Fastfetch ou Neofetch já está instalado e, quando necessário, realizar a instalação de forma automatizada.
+
+O projeto foi desenvolvido com foco em **simplicidade, portabilidade, automação e facilidade de manutenção**.
 
 ---
 
@@ -15,18 +23,19 @@ O objetivo é fornecer uma instalação simples e automatizada, evitando que o u
 * ⚡ Prioridade para o Fastfetch
 * 🔄 Fallback automático para o Neofetch
 * 🔎 Verificação antes da instalação
-* 🧩 Função reutilizável para instalação de pacotes
-* 🚫 Não reinstala ferramentas já disponíveis
+* 🧩 Função reutilizável para gerenciamento de pacotes
+* 🚫 Evita reinstalações desnecessárias
 * 🖥️ Executa automaticamente a ferramenta instalada
-* ❌ Retorna código de erro quando nenhuma alternativa está disponível
+* ❌ Retorna códigos de saída apropriados
+* 🔐 Utiliza os repositórios configurados no sistema
 
 ---
 
 # 🐧 Distribuições suportadas
 
-O script identifica o gerenciador de pacotes disponível no sistema.
+O script detecta o gerenciador de pacotes disponível no sistema.
 
-| Gerenciador | Principais distribuições        |
+| Gerenciador | Distribuições                   |
 | ----------- | ------------------------------- |
 | `apt`       | Debian, Ubuntu e derivados      |
 | `dnf`       | Fedora, RHEL e derivados        |
@@ -35,13 +44,9 @@ O script identifica o gerenciador de pacotes disponível no sistema.
 
 > A detecção é baseada na disponibilidade do gerenciador de pacotes, e não diretamente no nome da distribuição.
 
-Isso permite que o script também funcione em distribuições derivadas que utilizem um dos gerenciadores suportados.
-
 ---
 
 # 🔄 Fluxo de execução
-
-O funcionamento geral pode ser representado da seguinte forma:
 
 ```text
 ┌─────────────────────────┐
@@ -114,37 +119,97 @@ O funcionamento geral pode ser representado da seguinte forma:
 
 ---
 
+# 📁 Estrutura do projeto
+
+```text
+fastfetch-neofetch-installer/
+├── installer.sh
+├── README.md
+├── LICENSE
+├── .gitignore
+└── .github/
+    └── workflows/
+        └── shellcheck.yml
+```
+
+| Arquivo              | Descrição                   |
+| -------------------- | --------------------------- |
+| `installer.sh`       | Script principal            |
+| `README.md`          | Documentação do projeto     |
+| `LICENSE`            | Licença open-source         |
+| `.gitignore`         | Arquivos ignorados pelo Git |
+| `.github/workflows/` | Automação de CI/CD          |
+
+---
+
+# 🚀 Instalação
+
+## Requisitos
+
+* Linux
+* Bash
+* Um dos gerenciadores de pacotes suportados
+* Acesso aos repositórios da distribuição
+* `sudo`, quando necessário para instalação
+
+Verifique o Bash:
+
+```bash
+bash --version
+```
+
+---
+
+## 1. Clone o repositório
+
+```bash
+git clone https://github.com/SEU-USUARIO/fastfetch-neofetch-installer.git
+cd fastfetch-neofetch-installer
+```
+
+> Substitua `SEU-USUARIO` pelo usuário ou organização responsável pelo repositório.
+
+---
+
+## 2. Torne o script executável
+
+```bash
+chmod +x installer.sh
+```
+
+---
+
+## 3. Execute
+
+```bash
+./installer.sh
+```
+
+Se necessário:
+
+```bash
+sudo ./installer.sh
+```
+
+---
+
 # 🔍 Explicação técnica
 
-## 1. Shebang
+## Shebang
 
-O script começa com:
+O script utiliza:
 
 ```bash
 #!/usr/bin/env bash
 ```
 
-O *shebang* informa ao sistema que o script deve ser executado utilizando o **Bash**.
+O *shebang* informa que o script deve ser executado pelo Bash.
 
-A utilização de:
-
-```bash
-/usr/bin/env bash
-```
-
-permite localizar o Bash através do `PATH`, em vez de assumir que ele está obrigatoriamente em um caminho específico, como:
-
-```text
-/bin/bash
-```
-
-Isso torna o script mais portátil entre diferentes sistemas Unix-like.
+O uso de `/usr/bin/env` permite localizar o Bash através do `PATH`, evitando assumir um caminho fixo para o interpretador.
 
 ---
 
-# 🧰 2. Função `command_exists`
-
-O script utiliza uma função auxiliar para verificar se determinado comando está disponível:
+## 🧰 Função `command_exists`
 
 ```bash
 command_exists() {
@@ -152,21 +217,13 @@ command_exists() {
 }
 ```
 
-Essa função recebe o nome de um comando como argumento.
+Essa função verifica se determinado comando está disponível no sistema.
 
-Por exemplo:
+Exemplo:
 
 ```bash
 command_exists fastfetch
 ```
-
-ou:
-
-```bash
-command_exists apt
-```
-
-### Como funciona
 
 O comando:
 
@@ -174,52 +231,28 @@ O comando:
 command -v "$1"
 ```
 
-verifica se o comando informado existe e, quando encontrado, normalmente retorna seu caminho.
+procura o executável no `PATH`.
 
-Exemplo:
-
-```text
-/usr/bin/fastfetch
-```
-
-A saída é descartada através de:
+As redireções:
 
 ```bash
->/dev/null
+>/dev/null 2>&1
 ```
 
-Enquanto:
-
-```bash
-2>&1
-```
-
-redireciona a saída de erro para a mesma saída padrão.
-
-Assim, a função não imprime informações desnecessárias no terminal.
+impedem que a saída seja exibida no terminal.
 
 ### Código de retorno
-
-A função utiliza o código de saída do `command -v`:
 
 |           Código | Significado            |
 | ---------------: | ---------------------- |
 |              `0` | Comando encontrado     |
-| diferente de `0` | Comando não encontrado |
-
-Isso permite utilizá-la diretamente em estruturas condicionais:
-
-```bash
-if command_exists fastfetch; then
-    fastfetch
-fi
-```
+| Diferente de `0` | Comando não encontrado |
 
 ---
 
-# 📦 3. Detecção do gerenciador de pacotes
+# 📦 Detecção do gerenciador de pacotes
 
-O script identifica automaticamente qual gerenciador está disponível:
+O script verifica os gerenciadores nesta ordem:
 
 ```bash
 if command_exists apt; then
@@ -236,28 +269,19 @@ else
 fi
 ```
 
-O resultado é armazenado na variável:
+O gerenciador detectado é armazenado em:
 
 ```bash
 PKG_MANAGER
 ```
 
-### Mapeamento
-
-```text
-apt     → Debian / Ubuntu
-dnf     → Fedora / RHEL
-pacman  → Arch Linux / Manjaro
-zypper  → openSUSE
-```
-
-A vantagem dessa abordagem é que o restante do script não precisa conhecer diretamente qual distribuição está sendo utilizada.
+Isso permite que uma única função de instalação trate diferentes distribuições.
 
 ---
 
-# ⚡ 4. Verificação do Fastfetch
+# ⚡ Verificação do Fastfetch
 
-Depois de identificar o gerenciador de pacotes, o script verifica se o Fastfetch já está instalado:
+Antes de instalar qualquer pacote, o script verifica se o Fastfetch já existe:
 
 ```bash
 if command_exists fastfetch; then
@@ -266,34 +290,17 @@ if command_exists fastfetch; then
 fi
 ```
 
-Caso esteja disponível:
+Se estiver instalado:
 
 1. O Fastfetch é executado;
 2. Nenhuma instalação é realizada;
 3. O script termina com sucesso.
 
-O código:
-
-```bash
-exit 0
-```
-
-representa uma execução bem-sucedida.
-
-### Por que verificar antes?
-
-Isso evita:
-
-* Reinstalações desnecessárias;
-* Atualizações de pacotes sem necessidade;
-* Alterações desnecessárias no sistema;
-* Consumo adicional de rede.
-
 ---
 
-# 🖥️ 5. Fallback para Neofetch
+# 🔁 Fallback para Neofetch
 
-Se o Fastfetch não estiver instalado, o script verifica se o Neofetch já está disponível:
+Caso o Fastfetch não esteja disponível, o script verifica o Neofetch:
 
 ```bash
 if command_exists neofetch; then
@@ -302,35 +309,20 @@ if command_exists neofetch; then
 fi
 ```
 
-O comportamento é semelhante:
-
-```text
-Fastfetch existe?
-       │
-      SIM ──────► Executa Fastfetch
-       │
-      NÃO
-       │
-       ▼
-Neofetch existe?
-       │
-      SIM ──────► Executa Neofetch
-       │
-      NÃO
-       │
-       ▼
-   Continua para instalação
-```
+Isso fornece uma segunda alternativa antes de iniciar qualquer instalação.
 
 ---
 
-# 📥 6. Função `install_package`
+# 📥 Instalação de pacotes
 
-Para evitar duplicação de código, o script utiliza uma função responsável pela instalação:
+A instalação é centralizada em uma função:
 
 ```bash
 install_package() {
     case "$PKG_MANAGER" in
+        ...
+    esac
+}
 ```
 
 A função recebe o nome do pacote através de:
@@ -339,7 +331,7 @@ A função recebe o nome do pacote através de:
 $1
 ```
 
-Por exemplo:
+Exemplo:
 
 ```bash
 install_package fastfetch
@@ -351,85 +343,59 @@ Nesse caso:
 $1 = fastfetch
 ```
 
-A função então seleciona automaticamente o comando correspondente ao gerenciador detectado.
+A função seleciona o comando apropriado para o gerenciador detectado.
 
 ---
 
 ## APT
 
-Para sistemas Debian/Ubuntu:
-
 ```bash
 sudo apt update && sudo apt install -y "$1"
 ```
-
-O fluxo é:
-
-1. Atualizar os índices dos repositórios;
-2. Instalar o pacote;
-3. Utilizar `-y` para confirmar automaticamente.
 
 ---
 
 ## DNF
 
-Para Fedora/RHEL e derivados:
-
 ```bash
 sudo dnf install -y "$1"
 ```
-
-O parâmetro:
-
-```text
--y
-```
-
-confirma automaticamente a instalação.
 
 ---
 
 ## Pacman
 
-Para Arch Linux/Manjaro:
-
 ```bash
-sudo pacman -Sy --noconfirm "$1"
+sudo pacman -S --noconfirm "$1"
 ```
-
-> ⚠️ Para uso em produção, recomenda-se avaliar cuidadosamente a estratégia de sincronização e atualização utilizada pelo script. Em Arch Linux, operações parciais de atualização podem causar problemas de dependências.
 
 ---
 
 ## Zypper
 
-Para openSUSE:
-
 ```bash
 sudo zypper install -y "$1"
 ```
 
-O parâmetro `-y` evita a necessidade de confirmação manual.
+> A implementação deve evitar operações de atualização parcial em distribuições baseadas em Arch.
 
 ---
 
-# 🔄 7. Tentativa de instalação do Fastfetch
+# 🚀 Instalação do Fastfetch
 
-Caso o Fastfetch não esteja instalado:
+Quando necessário:
 
 ```bash
 echo "Tentando instalar fastfetch..."
 ```
 
-O script tenta instalar o pacote:
+Depois:
 
 ```bash
 if install_package fastfetch; then
 ```
 
-O resultado da função é utilizado diretamente pela estrutura condicional.
-
-Se a instalação for bem-sucedida, o script verifica novamente:
+Após a instalação, o script verifica novamente:
 
 ```bash
 if command_exists fastfetch; then
@@ -438,231 +404,80 @@ if command_exists fastfetch; then
 fi
 ```
 
-Essa segunda verificação é importante porque **o comando de instalação ter terminado não deve ser considerado, sozinho, uma garantia de que o executável está disponível**.
+Essa verificação adicional garante que o executável realmente esteja disponível antes de tentar executá-lo.
 
 ---
 
-# 🔁 8. Fallback para Neofetch
+# 🔄 Instalação do Neofetch
 
-Se o Fastfetch não estiver disponível nos repositórios ou não puder ser instalado, o script tenta o Neofetch:
+Se o Fastfetch não puder ser instalado:
 
 ```bash
 echo "Fastfetch não disponível. Tentando instalar neofetch..."
 ```
 
-Depois:
+O script executa o mesmo processo utilizando:
 
 ```bash
-if install_package neofetch; then
+install_package neofetch
 ```
 
-Caso a instalação seja concluída:
+Depois confirma:
 
 ```bash
-if command_exists neofetch; then
-    neofetch
-    exit 0
-fi
+command_exists neofetch
 ```
 
-O fluxo final fica:
+Se estiver disponível:
 
-```text
-Fastfetch
-   │
-   ├── Já instalado? ──► Executa
-   │
-   └── Não
-        │
-        ▼
-   Tentar instalar
-        │
-        ├── Sucesso ──► Executa
-        │
-        └── Falha
-             │
-             ▼
-          Neofetch
-             │
-             ├── Já instalado? ──► Executa
-             │
-             └── Não
-                  │
-                  ▼
-             Tentar instalar
-                  │
-                  ├── Sucesso ──► Executa
-                  │
-                  └── Falha ──► exit 1
+```bash
+neofetch
+exit 0
 ```
 
 ---
 
-# ❌ 9. Erro final
+# ❌ Tratamento de erro
 
-Se nenhum dos dois programas estiver disponível:
+Se nenhum dos dois pacotes puder ser instalado:
 
 ```bash
 echo "Nenhum dos pacotes (fastfetch ou neofetch) está disponível nos repositórios."
 exit 1
 ```
 
-O código:
-
-```bash
-exit 1
-```
-
-indica que a execução terminou com erro.
-
-Isso é especialmente útil quando o script é executado por:
-
-* Automação;
-* CI/CD;
-* Scripts externos;
-* Provisionamento;
-* Ferramentas de gerenciamento de configuração.
+O código `1` indica falha na execução.
 
 ---
 
-# 📊 Códigos de saída
+# 📊 Exit Codes
 
-O script utiliza códigos de saída para indicar o resultado da execução:
+| Código | Significado                                             |
+| -----: | ------------------------------------------------------- |
+|    `0` | Execução concluída com sucesso                          |
+|    `1` | Falha, pacote indisponível ou gerenciador não suportado |
 
-| Código | Significado                     |
-| -----: | ------------------------------- |
-|    `0` | Execução concluída com sucesso  |
-|    `1` | Falha ou recurso não disponível |
-
-Exemplos:
-
-```bash
-exit 0
-```
-
-indica sucesso.
-
-```bash
-exit 1
-```
-
-indica erro.
+Esses códigos permitem integrar o script com outros sistemas de automação.
 
 ---
 
-# ▶️ Como utilizar
+# 🧪 Testes
 
-## 1. Salvar o script
-
-Por exemplo:
-
-```text
-installer.sh
-```
-
----
-
-## 2. Tornar executável
-
-```bash
-chmod +x installer.sh
-```
-
----
-
-## 3. Executar
-
-```bash
-./installer.sh
-```
-
-Em sistemas onde privilégios administrativos são necessários, o próprio script utiliza `sudo` durante a instalação.
-
-Se necessário, execute:
-
-```bash
-sudo ./installer.sh
-```
-
----
-
-# 🧪 Exemplos
+Antes de utilizar o script em máquinas de produção, recomenda-se testar cada cenário.
 
 ### Fastfetch já instalado
 
-```text
-Fastfetch encontrado.
+```bash
+command -v fastfetch
 ```
 
-O script executará diretamente:
+### Neofetch já instalado
 
 ```bash
-fastfetch
+command -v neofetch
 ```
 
----
-
-### Fastfetch não instalado
-
-```text
-Tentando instalar fastfetch...
-```
-
-Se a instalação for bem-sucedida:
-
-```text
-Fastfetch instalado com sucesso.
-```
-
-O programa será executado automaticamente.
-
----
-
-### Fastfetch indisponível
-
-```text
-Fastfetch não disponível. Tentando instalar neofetch...
-```
-
-O script então utilizará o Neofetch como alternativa.
-
----
-
-### Nenhuma alternativa disponível
-
-```text
-Nenhum dos pacotes (fastfetch ou neofetch) está disponível nos repositórios.
-```
-
-Nesse caso:
-
-```text
-exit 1
-```
-
----
-
-# 🔐 Considerações de segurança
-
-O script instala software utilizando privilégios administrativos.
-
-Por isso:
-
-* ✅ Revise o código antes de executar;
-* ✅ Utilize repositórios oficiais ou confiáveis;
-* ✅ Evite executar scripts baixados de fontes desconhecidas;
-* ✅ Verifique os comandos executados como `root`;
-* ✅ Teste em ambiente controlado antes de utilizar em máquinas críticas.
-
-O projeto não deve utilizar `curl | bash` ou mecanismos equivalentes para executar código remoto sem validação.
-
----
-
-# 🐛 Troubleshooting
-
-## O script informa que o gerenciador não é suportado
-
-Verifique quais gerenciadores estão disponíveis:
+### Verificar gerenciador
 
 ```bash
 command -v apt
@@ -671,45 +486,102 @@ command -v pacman
 command -v zypper
 ```
 
-Pelo menos um deles deve retornar um caminho.
+### Validar sintaxe do Bash
+
+```bash
+bash -n installer.sh
+```
+
+Se nenhum erro for apresentado, a sintaxe básica do script está válida.
 
 ---
 
-## O pacote não pode ser instalado
+# 🔎 ShellCheck
 
-Verifique se os repositórios estão funcionando.
+O projeto recomenda utilizar o **ShellCheck** para identificar possíveis problemas no código Bash.
+
+Execute:
+
+```bash
+shellcheck installer.sh
+```
+
+O objetivo é manter o script livre de:
+
+* Variáveis mal utilizadas;
+* Problemas de quoting;
+* Redirecionamentos incorretos;
+* Construções Bash potencialmente problemáticas;
+* Erros comuns de shell scripting.
+
+---
+
+# 🔐 Considerações de segurança
+
+O instalador executa comandos com privilégios administrativos através do `sudo`.
+
+Por isso:
+
+* ✅ Revise o código antes da execução;
+* ✅ Utilize repositórios confiáveis;
+* ✅ Evite executar versões modificadas de fontes desconhecidas;
+* ✅ Não utilize `curl | bash` sem revisar previamente o conteúdo;
+* ✅ Teste em ambiente controlado antes de utilizar em máquinas críticas.
+
+O script não deve baixar e executar código arbitrário de fontes externas.
+
+---
+
+# 🐛 Troubleshooting
+
+## Gerenciador de pacotes não suportado
+
+Execute:
+
+```bash
+command -v apt
+command -v dnf
+command -v pacman
+command -v zypper
+```
+
+Se nenhum comando retornar um caminho, a distribuição ou ambiente provavelmente não é suportado.
+
+---
+
+## Fastfetch não está disponível
+
+Verifique diretamente no gerenciador de pacotes.
 
 ### Debian / Ubuntu
 
 ```bash
-sudo apt update
+apt search fastfetch
 ```
 
-### Fedora / RHEL
+### Fedora
 
 ```bash
-sudo dnf check-update
+dnf search fastfetch
 ```
 
 ### Arch Linux
 
 ```bash
-sudo pacman -Sy
+pacman -Ss fastfetch
 ```
 
 ### openSUSE
 
 ```bash
-sudo zypper refresh
+zypper search fastfetch
 ```
-
-Depois tente executar o instalador novamente.
 
 ---
 
-## O script não possui permissão de execução
+## Permissão negada
 
-Execute:
+Torne o arquivo executável:
 
 ```bash
 chmod +x installer.sh
@@ -723,7 +595,7 @@ Depois:
 
 ---
 
-## Verificar manualmente se o programa está instalado
+## Verificar instalação
 
 Fastfetch:
 
@@ -739,42 +611,19 @@ command -v neofetch
 
 ---
 
-# 🗂️ Estrutura recomendada do projeto
-
-```text
-scripts-collections/
-└── bash/
-    └── utils/
-        └── fetch/
-            ├── README.md
-            └── installer.sh
-```
-
-### Descrição
-
-| Arquivo        | Função                      |
-| -------------- | --------------------------- |
-| `installer.sh` | Script principal            |
-| `README.md`    | Documentação                |
-| `LICENSE`      | Licença do projeto          |
-<!-- | `.gitignore`   | Arquivos ignorados pelo Git | -->
-
----
-
 # 🗺️ Roadmap
 
-Possíveis melhorias futuras:
-
-* [ ] Adicionar modo `--help`
+* [ ] Adicionar `--help`
+* [ ] Adicionar `--version`
 * [ ] Adicionar modo `--dry-run`
-* [ ] Adicionar opção para escolher Fastfetch ou Neofetch manualmente
-* [ ] Adicionar detecção explícita da distribuição através de `/etc/os-release`
+* [ ] Adicionar escolha manual entre Fastfetch e Neofetch
 * [ ] Melhorar tratamento de erros
 * [ ] Adicionar logs opcionais
+* [ ] Detectar distribuição através de `/etc/os-release`
 * [ ] Adicionar testes automatizados
-* [ ] Adicionar ShellCheck ao CI
-<!-- * [ ] Criar GitHub Actions para testar diferentes distribuições -->
-* [ ] Adicionar suporte a outros gerenciadores de pacotes
+* [ ] Adicionar GitHub Actions
+* [ ] Integrar ShellCheck ao CI
+* [ ] Adicionar suporte a novos gerenciadores de pacotes
 
 ---
 
@@ -782,41 +631,48 @@ Possíveis melhorias futuras:
 
 Contribuições são bem-vindas.
 
-Para contribuir:
+### 1. Faça um fork
 
-1. Faça um fork do projeto;
-2. Crie uma branch:
+Crie um fork do projeto no GitHub.
+
+### 2. Crie uma branch
 
 ```bash
 git checkout -b feature/minha-melhoria
 ```
 
-3. Faça suas alterações;
-4. Teste o script;
-5. Faça o commit:
+### 3. Faça suas alterações
+
+Teste o script em uma ou mais distribuições suportadas.
+
+### 4. Valide o código
 
 ```bash
+bash -n installer.sh
+shellcheck installer.sh
+```
+
+### 5. Faça o commit
+
+```bash
+git add installer.sh README.md
 git commit -m "feat: adiciona nova funcionalidade"
 ```
 
-6. Envie a branch:
+### 6. Envie a branch
 
 ```bash
 git push origin feature/minha-melhoria
 ```
 
-7. Abra um Pull Request.
+### 7. Abra um Pull Request
 
-### Antes de enviar
+Descreva claramente:
 
-Verifique:
-
-* [ ] O script funciona no Bash;
-* [ ] As permissões estão corretas;
-* [ ] O código foi testado;
-* [ ] Não existem comandos desnecessariamente destrutivos;
-* [ ] A documentação foi atualizada;
-* [ ] O comportamento de erro foi validado.
+* O problema;
+* A solução;
+* Como foi testado;
+* Distribuições utilizadas.
 
 ---
 
@@ -824,21 +680,21 @@ Verifique:
 
 Este projeto está disponível sob a licença **MIT**.
 
-Consulte o arquivo [`LICENSE`](LICENSE) para obter os termos completos.
+Consulte [`LICENSE`](LICENSE) para obter os termos completos.
 
 ---
 
 # ⚖️ Disclaimer
 
-Este software executa operações de instalação utilizando privilégios administrativos.
+Este software pode executar operações administrativas no sistema operacional.
 
-O uso deste projeto é de responsabilidade do usuário. Sempre revise o código e valide seu comportamento antes de executá-lo em ambientes de produção.
+O uso deste projeto é de responsabilidade do usuário. Sempre revise o código e valide seu comportamento antes de utilizá-lo em ambientes de produção.
 
 ---
 
 ## ⭐ Gostou do projeto?
 
-Se este script foi útil para você, considere deixar uma ⭐ no GitHub.
+Se este projeto foi útil para você, considere deixar uma ⭐ no GitHub.
 
 Issues, sugestões, correções e Pull Requests são bem-vindos.
 
@@ -846,5 +702,5 @@ Issues, sugestões, correções e Pull Requests são bem-vindos.
 
 <p align="center">
   <strong>Fastfetch / Neofetch Installer</strong><br>
-  Instalação automatizada e multiplataforma para ferramentas de informações do sistema Linux.
+  Automação simples e multiplataforma para ferramentas de informações do sistema Linux.
 </p>
