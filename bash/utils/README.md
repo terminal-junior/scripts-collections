@@ -375,7 +375,6 @@ Possíveis melhorias para este diretório:
 * [ ] Padronizar códigos de saída
 * [ ] Adicionar testes automatizados
 * [ ] Integrar ShellCheck via GitHub Actions
-* [ ] Adicionar CI para scripts Bash
 * [ ] Padronizar documentação
 * [ ] Criar índice automático dos utilitários
 
