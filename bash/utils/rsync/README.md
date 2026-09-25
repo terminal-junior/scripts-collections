@@ -995,7 +995,7 @@ logs/
 
 # 💡 Melhorias futuras
 
-* [ ] Verificar automaticamente se `DESTINO` está montado
+* [x] Verificar automaticamente se `DESTINO` está montado
 * [ ] Impedir execução quando o destino não estiver disponível
 * [ ] Verificar espaço livre antes do backup
 * [ ] Implementar lock para impedir múltiplas instâncias
